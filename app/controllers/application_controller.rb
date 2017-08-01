@@ -12,9 +12,7 @@ class ApplicationController < ActionController::Base
 
     CreateGroup.perform_later(channel_id,
                               resp.message.ts,
-                              wait_until: 1.minute.from.now)
-
-
+                              wait_until: 1.minute.from_now)
 
     render plain: 'lunch? that sounds good!'
   end
