@@ -10,9 +10,9 @@ class ApplicationController < ActionController::Base
                             text: 'Who is in for lunch? (react with :+1:)',
                             as_user: true)
 
-    CreateGroup.perform_later(channel_id,
-                              resp.message.ts,
-                              wait_until: 1.minute.from_now)
+    CreateGroup
+      .set(wait_until: 1.minute.from_now)
+      .perform_later(channel_id, resp.message.ts)
 
     render plain: 'lunch? that sounds good!'
   end
