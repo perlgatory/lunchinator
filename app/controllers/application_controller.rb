@@ -13,10 +13,11 @@ class ApplicationController < ActionController::Base
       resp = client.chat_postMessage(channel: channel_id,
                               text: 'Who is in for lunch? (react with :+1:)',
                               as_user: true)
-      client.reactions_add(name: '+1', timestamp: resp.message.ts)
+      response_ts = resp.message.ts
+      client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
       CreateGroup
         .set(wait_until: 1.minute.from_now)
-        .perform_later(channel_id, initiating_user_id, resp.message.ts)
+        .perform_later(channel_id, initiating_user_id, response_ts)
       render plain: 'lunch? that sounds good!'
     elsif status == :not_joined
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
