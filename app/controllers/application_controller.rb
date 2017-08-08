@@ -6,7 +6,8 @@ class ApplicationController < ActionController::Base
   def lunch
     channel_id = params[:channel_id]
     client = Slack::Web::Client.new
-    status = channel_status(client, channel_id)
+    channel = Channel.new(channel_id)
+    status = channel.client_status(client)
     if status == :already_joined
       resp = client.chat_postMessage(channel: channel_id,
                               text: 'Who is in for lunch? (react with :+1:)',
@@ -19,20 +20,6 @@ class ApplicationController < ActionController::Base
       render plain: "Looks like I'm not invited :cry:"
     else
       render plain: "I'm not allowed in there :slightly_frowning_face:"
-    end
-  end
-
-  private
-  def channel_status(client, channel_id)
-    channel_info = client.channels_info(channel: channel_id)
-    if channel_info.channel.is_member
-      :already_joined
-    else
-      :not_joined
-    end
-  rescue Slack::Web::Api::Error => e
-    if e.message =~ /channel_not_found/
-      return :cannot_see
     end
   end
 end
