@@ -17,7 +17,7 @@ class ApplicationController < ActionController::Base
         .perform_later(channel_id, resp.message.ts)
       render plain: 'lunch? that sounds good!'
     elsif status == :not_joined
-      render plain: "Looks like I'm not invited :cry:"
+      render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else
       render plain: "I'm not allowed in there :slightly_frowning_face:"
     end
