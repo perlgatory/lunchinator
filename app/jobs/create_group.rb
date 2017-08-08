@@ -1,7 +1,7 @@
 class CreateGroup < ApplicationJob
-  def perform(channel_id, message_id)
+  def perform(channel_id, initiating_user_id, message_id)
     users_to_notify = get_users_who_reacted(channel_id, message_id)
-    group_id = create_group(users_to_notify)
+    group_id = create_group(initiating_user_id, users_to_notify)
     notify_users(group_id)
   end
 
@@ -27,8 +27,9 @@ class CreateGroup < ApplicationJob
     end
   end
 
-  def create_group(users)
-    resp = client.mpim_open(users: users)
+  def create_group(initiating_user_id, users)
+    all_users = (users << initiating_user_id).uniq
+    resp = client.mpim_open(users: all_users)
     if resp.ok
       resp.group.id
     else
