@@ -28,7 +28,9 @@ class CreateGroup < ApplicationJob
   end
 
   def create_group(initiating_user_id, users)
-    all_users = (users << initiating_user_id).uniq
+    all_users = (users << initiating_user_id)
+      .uniq
+      .join(',')
     resp = client.mpim_open(users: all_users)
     if resp.ok
       resp.group.id
