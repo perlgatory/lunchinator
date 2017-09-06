@@ -16,7 +16,7 @@ class ApplicationController < ActionController::Base
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
       CreateGroup
-        .set(wait_until: 1.minute.from_now)
+        .set(wait_until: 10.minutes.from_now)
         .perform_later(channel_id, initiating_user_id, response_ts)
       render plain: 'lunch? that sounds good!'
     elsif status == :not_joined
