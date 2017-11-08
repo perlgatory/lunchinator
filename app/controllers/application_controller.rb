@@ -8,8 +8,12 @@ class ApplicationController < ActionController::Base
     channel_id = params[:channel_id]
     initiating_user_id = params[:user_id]
     user_time_zone = get_user_timezone(initiating_user_id, client)
-    app_text = params[:text]
+    app_text = params[:text] || 'noon'
     parsed_time = Chronic.parse(app_text.strip.gsub(/^\s*(at|@)\s+/i, ''))
+    if parsed_time.nil?
+      render plain: "'#{parsed_time}' is an invalid time. Please specify a time to go to lunch."
+      return
+    end
     lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
     now = Time.now.in_time_zone(user_time_zone)
     if lunch_time < now
