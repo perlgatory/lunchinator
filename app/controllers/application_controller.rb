@@ -26,7 +26,7 @@ class ApplicationController < ActionController::Base
     status = channel.client_status(client)
     if status == :already_joined
       resp = client.chat_postMessage(channel: channel_id,
-                              text: "#{app_text} (#{parsed_time.strftime('%H:%M (%Z)')}), who is in for lunch? (react with :+1: by #{assemble_time.strftime('%H:%M (%Z)')})",
+                              text: "#{app_text} (#{lunch_time.strftime('%H:%M (%Z)')}), who is in for lunch? (react with :+1: by #{assemble_time.strftime('%H:%M (%Z)')})",
                               as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
