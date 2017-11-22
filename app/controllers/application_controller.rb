@@ -8,7 +8,7 @@ class ApplicationController < ActionController::Base
     channel_id = params[:channel_id]
     initiating_user_id = params[:user_id]
     user_time_zone = get_user_timezone(initiating_user_id, client)
-    app_text = params[:text] || 'noon'
+    app_text = params[:text].empty? ? 'noon' : params[:text]
     parsed_time = Chronic.parse(app_text.strip.gsub(/^\s*(at|@)\s+/i, ''))
     if parsed_time.nil?
       render plain: "'#{parsed_time}' is an invalid time. Please specify a time to go to lunch."
