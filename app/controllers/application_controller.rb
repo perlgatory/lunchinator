@@ -8,7 +8,7 @@ class ApplicationController < ActionController::Base
     channel_id = params[:channel_id]
     initiating_user_id = params[:user_id]
     user_time_zone = get_user_timezone(initiating_user_id, client)
-    username = get_username(initiating_user_id, client)
+    username = get_username(initiating_user_id)
     app_text = params[:text].empty? ? 'noon' : params[:text]
     cleaned_app_text = app_text.strip.gsub(/^\s*(at|@)\s+/i, '')
     parsed_time = Chronic.parse(cleaned_app_text)
@@ -58,13 +58,7 @@ class ApplicationController < ActionController::Base
     user_response.user.tz
   end
 
-  def get_username(user_id, client)
-    user_response = client.users_info(user: user_id)
-    # check that response is good
-    status_ok = user_response.ok
-    unless status_ok
-      return :not_ok # TODO: Handle this
-    end
-    "<@#{user_response.user.name}>"
+  def get_username(user_id)
+    "<@#{user_id}>"
   end
 end
