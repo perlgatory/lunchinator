@@ -8,6 +8,7 @@ class ApplicationController < ActionController::Base
     channel_id = params[:channel_id]
     initiating_user_id = params[:user_id]
     user_time_zone = get_user_timezone(initiating_user_id, client)
+    username = get_username(initiating_user_id, client)
     app_text = params[:text].empty? ? 'noon' : params[:text]
     parsed_time = Chronic.parse(app_text.strip.gsub(/^\s*(at|@)\s+/i, ''))
     if parsed_time.nil?
@@ -30,8 +31,9 @@ class ApplicationController < ActionController::Base
     status = channel.client_status(client)
     if status == :already_joined
       resp = client.chat_postMessage(channel: channel_id,
-                              text: "#{app_text} (#{lunch_time.strftime('%H:%M (%Z)')}), who is in for lunch? (react with :+1: by #{assemble_time.strftime('%H:%M (%Z)')})",
-                              as_user: true)
+#                              text: "#{app_text} (#{lunch_time.strftime('%H:%M (%Z)')}), who is in for lunch? (react with :+1: by #{assemble_time.strftime('%H:%M (%Z)')})",
+                                     text: "#{username} wants to go to lunch at #{parsed_time} (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
+                                     as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
       CreateGroup
@@ -53,5 +55,15 @@ class ApplicationController < ActionController::Base
       return :not_ok # TODO: Handle this
     end
     user_response.user.tz
+  end
+
+  def get_username(user_id, client)
+    user_response = client.users_info(user: user_id)
+    # check that response is good
+    status_ok = user_response.ok
+    unless status_ok
+      return :not_ok # TODO: Handle this
+    end
+    '@' + user_response.user.name
   end
 end
