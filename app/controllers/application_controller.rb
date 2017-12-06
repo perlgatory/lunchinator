@@ -65,6 +65,6 @@ class ApplicationController < ActionController::Base
     unless status_ok
       return :not_ok # TODO: Handle this
     end
-    '@' + user_response.user.name
+    "<@#{user_response.user.name}>"
   end
 end
