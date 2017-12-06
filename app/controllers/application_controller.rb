@@ -10,7 +10,8 @@ class ApplicationController < ActionController::Base
     user_time_zone = get_user_timezone(initiating_user_id, client)
     username = get_username(initiating_user_id, client)
     app_text = params[:text].empty? ? 'noon' : params[:text]
-    parsed_time = Chronic.parse(app_text.strip.gsub(/^\s*(at|@)\s+/i, ''))
+    cleaned_app_text = app_text.strip.gsub(/^\s*(at|@)\s+/i, '')
+    parsed_time = Chronic.parse(cleaned_app_text)
     if parsed_time.nil?
       render plain: "'#{parsed_time}' is an invalid time. Please specify a time to go to lunch."
       return
@@ -32,7 +33,7 @@ class ApplicationController < ActionController::Base
     if status == :already_joined
       resp = client.chat_postMessage(channel: channel_id,
 #                              text: "#{app_text} (#{lunch_time.strftime('%H:%M (%Z)')}), who is in for lunch? (react with :+1: by #{assemble_time.strftime('%H:%M (%Z)')})",
-                                     text: "#{username} wants to go to lunch at #{parsed_time} (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
+                                     text: "#{username} wants to go to lunch at #{cleaned_app_text} (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
