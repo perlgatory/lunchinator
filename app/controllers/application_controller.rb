@@ -37,7 +37,6 @@ class ApplicationController < ActionController::Base
       CreateGroup
         .set(wait_until: assemble_time)
         .perform_later(channel_id, initiating_user_id, response_ts)
-      render plain: 'lunch? that sounds good!'
     elsif status == :not_joined
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else
