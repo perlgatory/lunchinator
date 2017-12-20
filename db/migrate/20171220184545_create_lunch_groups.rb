@@ -1,6 +1,5 @@
 class CreateLunchGroups < ActiveRecord::Migration[5.1]
   def up
-
     execute <<-SQL
       CREATE TYPE lunch_group_status AS ENUM ('open', 'assembled', 'departed');
     SQL
@@ -12,7 +11,6 @@ class CreateLunchGroups < ActiveRecord::Migration[5.1]
 
       t.timestamps
     end
-
   end
   def down
     drop_table :lunch_groups
