@@ -13,7 +13,7 @@ class ApplicationController < ActionController::Base
     cleaned_app_text = app_text.strip.gsub(/^\s*(at|@)\s+/i, '')
     parsed_time = Chronic.parse(cleaned_app_text)
     if parsed_time.nil?
-      render plain: "'#{parsed_time}' is an invalid time. Please specify a time to go to lunch."
+      render plain: "'#{app_text}' is an invalid time. Please specify a time to go to lunch."
       return
     end
     lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
