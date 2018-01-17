@@ -18,15 +18,16 @@ class ApplicationController < ActionController::Base
     end
     lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
     now = Time.now.in_time_zone(user_time_zone)
-    if lunch_time < now
-      render plain: "#{parsed_time} is in the past. Please pick a different time for lunch... or build a time machine."
+    assemble_time = get_assemble_time(lunch_time, now)
+    if assemble_time.nil?
       return
-    elsif lunch_time < now + 10.minutes
-      assemble_time = lunch_time
-    elsif lunch_time < now + 20.minutes
-      assemble_time = now + 10.minutes
-    else
-      assemble_time = lunch_time - 10.minutes
+    end
+    # check if departure time is within 30 minutes and status is open
+    results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), status: 'open')
+    # filter results for those with a channel_id that user can access TODO: pick up here
+    if results.any?
+      # notify user of other valid group(s)
+      return
     end
     channel = Channel.new(channel_id)
     status = channel.client_status(client)
@@ -37,13 +38,26 @@ class ApplicationController < ActionController::Base
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
-      CreateGroup
+      AssembleGroup
         .set(wait_until: assemble_time)
         .perform_later(channel_id, initiating_user_id, response_ts)
     elsif status == :not_joined
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else
       render plain: "I'm not allowed in there :slightly_frowning_face:"
+    end
+  end
+
+  def get_assemble_time(lunch_time, now)
+    if lunch_time < now
+      render plain: "#{parsed_time} is in the past. Please pick a different time for lunch... or build a time machine."
+      nil
+    elsif lunch_time < now + 10.minutes
+      lunch_time
+    elsif lunch_time < now + 20.minutes
+      now + 10.minutes
+    else
+      lunch_time - 10.minutes
     end
   end
 
