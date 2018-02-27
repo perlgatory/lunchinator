@@ -26,10 +26,10 @@ class ApplicationController < ActionController::Base
     results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), status: 'open').to_a
     # filter results for those with a channel_id that user can access TODO: pick up here
     results.select! do |item|
-        members_response = client.conversations.members(item.channel_id, limit: 999)
+        members_response = client.conversations_members(channel: item.channel_id, limit: 999)
         members = members_response.members
         while !(next_cursor = members_response.response_metadata.next_cursor).blank?
-            members_response = client.conversations.members(item.channel_id, limit: 999, cursor: next_cursor)
+            members_response = client.conversations_members(channel: item.channel_id, limit: 999, cursor: next_cursor)
             members.concat members_response.members
         end
         members.include? initiating_user_id
