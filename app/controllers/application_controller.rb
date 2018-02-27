@@ -23,7 +23,7 @@ class ApplicationController < ActionController::Base
       return
     end
     # check if departure time is within 30 minutes and status is open
-    results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), status: 'open').all
+    results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), status: 'open').to_a
     # filter results for those with a channel_id that user can access TODO: pick up here
     results.select! do |item|
         members_response = client.conversations.members(item.channel_id, limit: 999)
