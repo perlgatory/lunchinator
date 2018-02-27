@@ -59,7 +59,7 @@ class ApplicationController < ActionController::Base
 
   def get_assemble_time(lunch_time, now)
     if lunch_time < now
-      render plain: "#{parsed_time} is in the past. Please pick a different time for lunch... or build a time machine."
+      render plain: "#{lunch_time} is in the past. Please pick a different time for lunch... or build a time machine."
       nil
     elsif lunch_time < now + 10.minutes
       lunch_time
