@@ -35,6 +35,7 @@ class ApplicationController < ActionController::Base
         members.include? initiating_user_id
     end
     if results.any?
+      render plain: "Hey, no."
       # notify user of other valid group(s)
       return
     end
@@ -47,6 +48,7 @@ class ApplicationController < ActionController::Base
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
+      LunchGroup.create(channel_id: channel_id, message_id: response_ts, departure_time: lunch_time, status: 'open')
       AssembleGroup
         .set(wait_until: assemble_time)
         .perform_later(channel_id, initiating_user_id, response_ts)
