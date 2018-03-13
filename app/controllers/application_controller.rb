@@ -36,7 +36,7 @@ class ApplicationController < ActionController::Base
     end
     if results.any?
       links = results.map do |item|
-        client.chat_getPermalink(channel: item.channel_id, message_ts: item.message_id)
+        client.chat_getPermalink(channel: item.channel_id, message_ts: item.message_id)['permalink']
       end
       render plain: "Here are some existing lunch groups:\n" + links.join("\n") # TODO: pick up here
       # notify user of other valid group(s)
