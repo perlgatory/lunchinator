@@ -35,7 +35,10 @@ class ApplicationController < ActionController::Base
         members.include? initiating_user_id
     end
     if results.any?
-      render plain: "Hey, no." # TODO: pick up here
+      links = results.map do |item|
+        client.chat_getPermalink(channel: item.channel_id, message_ts: item.message_id)
+      end
+      render plain: "Here are some existing lunch groups:\n" + links.join("\n") # TODO: pick up here
       # notify user of other valid group(s)
       return
     end
