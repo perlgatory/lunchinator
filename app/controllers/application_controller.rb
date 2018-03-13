@@ -38,8 +38,11 @@ class ApplicationController < ActionController::Base
       links = results.map do |item|
         client.chat_getPermalink(channel: item.channel_id, message_ts: item.message_id)['permalink']
       end
-      render plain: "You're not the first to plan lunch today!  Consider:\n" + links.join("\n") # TODO: pick up here
       # notify user of other valid group(s)
+      client.chat_postEphemeral(channel: channel_id,
+                                user: initiating_user_id,
+                                text: "You're not the first to plan lunch today!  Consider:\n" + links.join("\n"),
+                                as_user: true)
       return
     end
     channel = Channel.new(channel_id)
