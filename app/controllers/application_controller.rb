@@ -43,6 +43,7 @@ class ApplicationController < ActionController::Base
                                 user: initiating_user_id,
                                 text: "You're not the first to plan lunch today!  Consider:\n" + links.join("\n"),
                                 as_user: true)
+      #TODO Add a button to force new lunch group creation
       return
     end
     channel = Channel.new(channel_id)
