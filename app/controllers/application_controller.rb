@@ -42,8 +42,33 @@ class ApplicationController < ActionController::Base
       client.chat_postEphemeral(channel: channel_id,
                                 user: initiating_user_id,
                                 text: "You're not the first to plan lunch today!  Consider:\n" + links.join("\n"),
-                                as_user: true)
+                                as_user: true,
+                                attachments: [
+                                    {
+                                        "text": "Wanna create a new lunch group anyway?",
+                                        "fallback": "You are unable to create a lunch group",
+                                        "callback_id": "lunch_anyway",
+                                        "color": "#3AA3E3",
+                                        "attachment_type": "default",
+                                        "actions": [
+                                            {
+                                                "name": "yes",
+                                                "text": "Yes",
+                                                "type": "button",
+                                                "value": "True"
+                                            },
+                                            {
+                                                "name": "no",
+                                                "text": "No",
+                                                "type": "button",
+                                                "value": "False"
+                                            }
+                                        ]
+                                    }
+                                ])
       #TODO Add a button to force new lunch group creation
+
+
       return
     end
     channel = Channel.new(channel_id)
