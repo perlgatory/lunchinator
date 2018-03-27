@@ -55,7 +55,7 @@ class ApplicationController < ActionController::Base
                                                 "name": "yes",
                                                 "text": "Yes",
                                                 "type": "button",
-                                                "value": "True"
+                                                "value": lunch_time
                                             },
                                             {
                                                 "name": "no",
