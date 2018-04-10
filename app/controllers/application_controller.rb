@@ -1,6 +1,6 @@
 class ApplicationController < ActionController::Base
   def test
-    render plain: 'hello, world'
+    render plain: "How'd you get here? Shoo!"
   end
 
   def lunch
@@ -61,12 +61,14 @@ class ApplicationController < ActionController::Base
                                                 "name": "no",
                                                 "text": "No",
                                                 "type": "button",
-                                                "value": "False"
+                                                "value": links.join("\n")
                                             }
                                         ]
                                     }
                                 ])
-      #TODO Add a button to force new lunch group creation
+      # TODO: Make button do something
+
+
 
 
       return
@@ -88,6 +90,25 @@ class ApplicationController < ActionController::Base
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else
       render plain: "I'm not allowed in there :slightly_frowning_face:"
+    end
+  end
+
+  def interactive
+    payload = JSON.parse params['payload']
+    if payload['callback_id'] == 'lunch_anyway'
+      lunch_anyway(payload)
+    else
+      test
+    end
+  end
+
+  private
+  def lunch_anyway(payload)
+    if payload['actions'][0]['name'] == 'no'
+      links = payload['actions'][0]['value']
+      render plain: "Okay, go join another lunch group then:\n" + links
+    else
+      render plain: "Other stuff to do!"  # TODO: Extract lunch group creation routine from `lunch`, use here
     end
   end
 
