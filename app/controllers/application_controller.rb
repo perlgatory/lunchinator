@@ -8,7 +8,6 @@ class ApplicationController < ActionController::Base
     channel_id = params[:channel_id]
     initiating_user_id = params[:user_id]
     user_time_zone = get_user_timezone(initiating_user_id, client)
-    username = get_username(initiating_user_id)
     app_text = params[:text].empty? ? 'noon' : params[:text]
     cleaned_app_text = app_text.strip.gsub(/^\s*(at|@)\s+/i, '')
     parsed_time = Chronic.parse(cleaned_app_text)
@@ -17,11 +16,7 @@ class ApplicationController < ActionController::Base
       return
     end
     lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
-    now = Time.now.in_time_zone(user_time_zone)
-    assemble_time = get_assemble_time(lunch_time, now)
-    if assemble_time.nil?
-      return
-    end
+
     # check if departure time is within 30 minutes and status is open
     results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), status: 'open').to_a
     # filter results for those with a channel_id that user can access
@@ -73,19 +68,29 @@ class ApplicationController < ActionController::Base
 
       return
     end
+    make_lunch(client, channel_id, initiating_user_id, cleaned_app_text, lunch_time)
+  end
+
+  def make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time)
     channel = Channel.new(channel_id)
     status = channel.client_status(client)
+    username = get_username(initiating_user_id)
+    user_time_zone = get_user_timezone(initiating_user_id, client)
+    now = Time.now.in_time_zone(user_time_zone)
+    assemble_time = get_assemble_time(lunch_time, now)
+    if assemble_time.nil?
+      return
+    end
     if status == :already_joined
       resp = client.chat_postMessage(channel: channel_id,
-#                              text: "#{app_text} (#{lunch_time.strftime('%H:%M (%Z)')}), who is in for lunch? (react with :+1: by #{assemble_time.strftime('%H:%M (%Z)')})",
-                                     text: "#{username} wants to go to lunch at #{cleaned_app_text} (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
+                                     text: "#{username} wants to go to lunch at #{user_lunch_time} (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
       LunchGroup.create(channel_id: channel_id, message_id: response_ts, departure_time: lunch_time, status: 'open')
       AssembleGroup
-        .set(wait_until: assemble_time)
-        .perform_later(channel_id, initiating_user_id, response_ts)
+          .set(wait_until: assemble_time)
+          .perform_later(channel_id, initiating_user_id, response_ts)
     elsif status == :not_joined
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else
@@ -107,6 +112,16 @@ class ApplicationController < ActionController::Base
     if payload['actions'][0]['name'] == 'no'
       links = payload['actions'][0]['value']
       render plain: "Okay, go join another lunch group then:\n" + links
+    elsif payload['actions'][0]['name'] == 'yes'
+      client = Slack::Web::Client.new
+      channel_id = payload['channel']['id']
+      initiating_user_id = payload['user']['id']
+      user_lunch_time = payload['actions'][0]['value']
+      user_time_zone = get_user_timezone(initiating_user_id, client)
+      parsed_time = Chronic.parse(user_lunch_time)
+      lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
+      make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time)
+      render plain: "Lunch group created.  May the odds be ever in your favour!"
     else
       render plain: "Other stuff to do!"  # TODO: Extract lunch group creation routine from `lunch`, use here
     end
