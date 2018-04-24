@@ -1,8 +1,10 @@
-class CreateGroup < ApplicationJob
+class AssembleGroup < ApplicationJob
   def perform(channel_id, initiating_user_id, message_id)
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_id = create_group(initiating_user_id, users_to_notify)
     notify_users(group_id)
+    group = LunchGroup.select(channel_id: channel_id, message_id: message_id).first
+    group.update(status: 'assembled')
   end
 
   private
