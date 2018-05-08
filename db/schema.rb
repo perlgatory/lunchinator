@@ -10,12 +10,19 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema.define(version: 20180117190109) do
+ActiveRecord::Schema.define(version: 20180508171822) do
 
   # These are extensions that must be enabled in order to support this database
   enable_extension "plpgsql"
 
 # Could not dump table "lunch_groups" because of following StandardError
 #   Unknown type 'lunch_group_status' for column 'status'
+
+  create_table "places", force: :cascade do |t|
+    t.text "name"
+    t.text "google_places_id"
+    t.index ["google_places_id"], name: "index_places_on_google_places_id"
+    t.index ["name"], name: "index_places_on_name"
+  end
 
 end
