@@ -61,11 +61,6 @@ class ApplicationController < ActionController::Base
                                         ]
                                     }
                                 ])
-      # TODO: Make button do something
-
-
-
-
       return
     end
     make_lunch(client, channel_id, initiating_user_id, cleaned_app_text, lunch_time)
@@ -123,7 +118,7 @@ class ApplicationController < ActionController::Base
       make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time)
       render plain: "Lunch group created.  May the odds be ever in your favour!"
     else
-      render plain: "Other stuff to do!"  # TODO: Extract lunch group creation routine from `lunch`, use here
+      render plain: "How did you get here?"
     end
   end
 
