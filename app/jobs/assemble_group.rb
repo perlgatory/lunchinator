@@ -49,9 +49,18 @@ class AssembleGroup < ApplicationJob
   end
 
   def create_poll(group_id)
+    nums = ["one","two","three","four","five","six","seven","eight","nine","ten"]
     places_rand = Place.order("RANDOM()").limit(10).map(&:name)
-    client.chat_postMessage(channel: group_id,
-                            text: "Where do you want to go?\n:one: this\n:two: that\n:three: other\n",
+    text = "Where do you want to go?\n"
+    nums.zip(places_rand).each do |num, place|
+        text += ":#{num}: #{place}\n"
+    end
+    resp = client.chat_postMessage(channel: group_id,
+                            text: text,
                             as_user: true)
+    response_ts = resp.message.ts
+    nums.each do |num|
+        client.reactions_add(name: num, channel: channel_id, timestamp: response_ts)
+    end    
   end
 end
