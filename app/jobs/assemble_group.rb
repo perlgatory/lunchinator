@@ -60,7 +60,7 @@ class AssembleGroup < ApplicationJob
                             as_user: true)
     response_ts = resp.message.ts
     nums.each do |num|
-        client.reactions_add(name: num, channel: channel_id, timestamp: response_ts)
+        client.reactions_add(name: num, channel: group_id, timestamp: response_ts)
     end    
   end
 end
