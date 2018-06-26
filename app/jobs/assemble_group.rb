@@ -50,8 +50,7 @@ class AssembleGroup < ApplicationJob
 
   def create_poll(group_id)
     places_rand = Place.order("RANDOM()").limit(10).map(&:name)
-    client.chat_postMessage(channel: group_id,
-                            text: '/poll "Where do you want to go?" "this" "that" "other"',
-                            as_user: true)
+    client.chat_command(channel: group_id, command: "/poll",
+                            text: '"Where do you want to go?" "this" "that" "other"')
   end
 end
