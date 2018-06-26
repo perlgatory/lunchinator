@@ -4,5 +4,6 @@ class AddPlacesTable < ActiveRecord::Migration[5.1]
       t.text :name, index: true
       t.text :google_places_id, index: true
     end
+    PopulatePlacesTable.perform_now
   end
 end
