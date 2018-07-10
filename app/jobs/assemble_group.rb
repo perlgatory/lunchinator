@@ -2,9 +2,10 @@ class AssembleGroup < ApplicationJob
   def perform(channel_id, initiating_user_id, message_id)
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_id = create_group(initiating_user_id, users_to_notify)
-    notify_users(group_id)
-    create_poll(group_id)
     group = LunchGroup.select(channel_id: channel_id, message_id: message_id).first
+    destination = group.destination
+    notify_users(group_id, destination)
+    create_poll(group_id) if destination.nil?
     group.update(status: 'assembled')
   end
 
@@ -42,9 +43,10 @@ class AssembleGroup < ApplicationJob
     end
   end
 
-  def notify_users(group_id)
+  def notify_users(group_id, destination)
+    destination ||= "lunch"
     client.chat_postMessage(channel: group_id,
-                            text: "Hey, you're stuck going to lunch together",
+                            text: "Hey, you're stuck having #{destination} together",
                             as_user: true)
   end
 
