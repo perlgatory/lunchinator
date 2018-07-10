@@ -32,6 +32,7 @@ gem 'jbuilder', '~> 2.5'
 
 gem 'slack-ruby-client', '~> 0.11'
 gem 'chronic'
+gem 'google_places'
 
 # Use Capistrano for deployment
 # gem 'capistrano-rails', group: :development

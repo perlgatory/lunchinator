@@ -3,6 +3,7 @@ class AssembleGroup < ApplicationJob
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_id = create_group(initiating_user_id, users_to_notify)
     notify_users(group_id)
+    create_poll(group_id)
     group = LunchGroup.select(channel_id: channel_id, message_id: message_id).first
     group.update(status: 'assembled')
   end
@@ -45,5 +46,21 @@ class AssembleGroup < ApplicationJob
     client.chat_postMessage(channel: group_id,
                             text: "Hey, you're stuck going to lunch together",
                             as_user: true)
+  end
+
+  def create_poll(group_id)
+    nums = ["one","two","three","four","five","six","seven","eight","nine","ten"]
+    places_rand = Place.order("RANDOM()").limit(10).map(&:name)
+    text = "Where do you want to go?\n"
+    nums.zip(places_rand).each do |num, place|
+        text += ":#{num}: #{place}\n"
+    end
+    resp = client.chat_postMessage(channel: group_id,
+                            text: text,
+                            as_user: true)
+    response_ts = resp.message.ts
+    nums.each do |num|
+        client.reactions_add(name: num, channel: group_id, timestamp: response_ts)
+    end    
   end
 end
