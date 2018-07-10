@@ -8,17 +8,18 @@ class ApplicationController < ActionController::Base
     channel_id = params[:channel_id]
     initiating_user_id = params[:user_id]
     user_time_zone = get_user_timezone(initiating_user_id, client)
-    app_text = params[:text].empty? ? 'noon' : params[:text]
-    cleaned_app_text = app_text.strip.gsub(/^\s*(at|@)\s+/i, '')
-    parsed_time = Chronic.parse(cleaned_app_text)
+
+    (user_time, user_place) = parse_lunch_command_payload(params[:text])
+
+    parsed_time = Chronic.parse(user_time)
     if parsed_time.nil?
-      render plain: "'#{app_text}' is an invalid time. Please specify a time to go to lunch."
+      render plain: "'#{params[:text]}' is an invalid time. Please specify a time to go to lunch."
       return
     end
     lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
 
-    # check if departure time is within 30 minutes and status is open
-    results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), status: 'open').to_a
+    # check if departure time to the same destination (if any) is within 30 minutes and status is open
+    results = LunchGroup.where(departure_time: (lunch_time - 30.minutes)..(lunch_time + 30.minutes), destination: user_place, status: 'open').to_a
     # filter results for those with a channel_id that user can access
     results.select! do |item|
         members_response = client.conversations_members(channel: item.channel_id, limit: 999)
@@ -50,7 +51,7 @@ class ApplicationController < ActionController::Base
                                                 "name": "yes",
                                                 "text": "Yes",
                                                 "type": "button",
-                                                "value": lunch_time
+                                                "value": params[:text].strip
                                             },
                                             {
                                                 "name": "no",
@@ -63,10 +64,20 @@ class ApplicationController < ActionController::Base
                                 ])
       return
     end
-    make_lunch(client, channel_id, initiating_user_id, cleaned_app_text, lunch_time)
+    make_lunch(client, channel_id, initiating_user_id, user_time, lunch_time, user_place)
   end
 
-  def make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time)
+  def parse_lunch_command_payload(payload)
+    app_text = payload
+    cleaned_app_text = app_text.strip.gsub(/^\s*(at|@)\s+/i, '')
+    (user_time, user_place) = cleaned_app_text.split(/\s+(?:at|@)\s*/,2)
+    user_time ||= 'noon'
+    user_time.strip!
+
+    return user_time, user_place
+  end
+
+  def make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time, lunch_place)
     channel = Channel.new(channel_id)
     status = channel.client_status(client)
     username = get_username(initiating_user_id)
@@ -77,12 +88,13 @@ class ApplicationController < ActionController::Base
       return
     end
     if status == :already_joined
+      destination = lunch_place || "to go to lunch"
       resp = client.chat_postMessage(channel: channel_id,
-                                     text: "#{username} wants to go to lunch at #{user_lunch_time} (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
+                                     text: "#{username} wants #{destination} at #{user_lunch_time}  (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
-      LunchGroup.create(channel_id: channel_id, message_id: response_ts, departure_time: lunch_time, status: 'open')
+      LunchGroup.create(channel_id: channel_id, message_id: response_ts, departure_time: lunch_time, destination: lunch_place, status: 'open')
       AssembleGroup
           .set(wait_until: assemble_time)
           .perform_later(channel_id, initiating_user_id, response_ts)
@@ -111,11 +123,12 @@ class ApplicationController < ActionController::Base
       client = Slack::Web::Client.new
       channel_id = payload['channel']['id']
       initiating_user_id = payload['user']['id']
-      user_lunch_time = payload['actions'][0]['value']
+      app_text = payload['actions'][0]['value']
+      (user_lunch_time, user_place) = parse_lunch_command_payload(app_text)
       user_time_zone = get_user_timezone(initiating_user_id, client)
       parsed_time = Chronic.parse(user_lunch_time)
       lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
-      make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time)
+      make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time, user_place)
       render plain: "Lunch group created.  May the odds be ever in your favour!"
     else
       render plain: "How did you get here?"
