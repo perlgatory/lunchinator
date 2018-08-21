@@ -2,11 +2,15 @@ class AssembleGroup < ApplicationJob
   def perform(channel_id, initiating_user_id, message_id)
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_id = create_group(initiating_user_id, users_to_notify)
-    group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
-    destination = group.destination
-    notify_users(group_id, destination)
-    create_poll(group_id) if destination.nil?
-    group.update(status: 'assembled')
+    if group_id
+      group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
+      destination = group.destination
+      notify_users(group_id, destination)
+      create_poll(group_id) if destination.nil?
+      group.update(status: 'assembled')
+    else
+      group.destroy
+    end
   end
 
   private
@@ -35,10 +39,14 @@ class AssembleGroup < ApplicationJob
     all_users = (users << initiating_user_id)
       .uniq
       .join(',')
-    resp = client.mpim_open(users: all_users)
-    if resp.ok
-      resp.group.id
-    else
+    begin
+      resp = client.mpim_open(users: all_users)
+      if resp.ok
+        resp.group.id
+      else
+        nil
+      end
+    rescue Slack::Web::Api::Errors::SlackError
       nil
     end
   end
