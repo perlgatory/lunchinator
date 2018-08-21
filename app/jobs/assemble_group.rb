@@ -8,6 +8,7 @@ class AssembleGroup < ApplicationJob
       notify_users(group_chat, destination)
       create_poll(group_chat) if destination.nil?
       group.update(status: 'assembled')
+      DepartGroup.set(wait_until: group.departure_time).perform_later(group.id)
     else
       group.destroy
     end
