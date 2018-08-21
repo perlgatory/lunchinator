@@ -2,8 +2,8 @@ class AssembleGroup < ApplicationJob
   def perform(channel_id, initiating_user_id, message_id)
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_chat = create_group_chat(initiating_user_id, users_to_notify)
+    group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
     if group_chat
-      group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
       destination = group.destination
       notify_users(group_chat, destination)
       create_poll(group_chat) if destination.nil?
