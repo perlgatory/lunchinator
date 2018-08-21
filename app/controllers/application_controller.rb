@@ -11,7 +11,7 @@ class ApplicationController < ActionController::Base
 
     (user_time, user_place) = parse_lunch_command_payload(params[:text])
 
-    parsed_time = Chronic.parse(user_time)
+    parsed_time = Chronic.parse("today " + user_time)
     if parsed_time.nil?
       render plain: "'#{params[:text]}' is an invalid time. Please specify a time to go to lunch."
       return
