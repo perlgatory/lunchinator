@@ -15,10 +15,6 @@ class AssembleGroup < ApplicationJob
   end
 
   private
-  def client
-    @client ||= Slack::Web::Client.new
-  end
-
   def get_users_who_reacted(channel_id, message_id)
     reactions_response = client.reactions_get(
       channel: channel_id,
