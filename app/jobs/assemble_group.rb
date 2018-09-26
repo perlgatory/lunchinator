@@ -68,6 +68,11 @@ class AssembleGroup < ApplicationJob
     response_ts = resp.message.ts
     nums.each do |num|
         client.reactions_add(name: num, channel: group_chat, timestamp: response_ts)
-    end    
+        sleep(0.1) until get_reactions(group_chat, response_ts).include? num
+    end
+  end
+
+  def get_reactions(channel_id, response_ts)
+    client.reactions_get(channel: channel_id, timestamp: response_ts).message.reactions.map{|r| r.name}
   end
 end
