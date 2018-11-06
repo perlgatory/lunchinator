@@ -73,6 +73,11 @@ class AssembleGroup < ApplicationJob
   end
 
   def get_reactions(channel_id, response_ts)
-    client.reactions_get(channel: channel_id, timestamp: response_ts).message.reactions.map{|r| r.name}
+    reactions_response = client.reactions_get(channel: channel_id, timestamp: response_ts)
+    if reactions_response.ok
+      reactions_response.message.reactions.map{|r| r.name}
+    else
+      []
+    end
   end
 end
