@@ -8,6 +8,11 @@ class AssembleGroup < ApplicationJob
       notify_users(group_chat, destination)
       create_poll(group_chat) if destination.nil?
       group.update(status: 'assembled')
+      to_string = destination || 'lunch'
+      client.chat_update(
+          channel: channel_id, ts: message_id,
+          text: "A group is assembling for #{to_string} at #{group.departure_time}. Contact #{initiating_user_id} to join."
+      )
       DepartGroup.set(wait_until: group.departure_time).perform_later(group.id)
     else
       group.destroy
