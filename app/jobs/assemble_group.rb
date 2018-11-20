@@ -68,16 +68,7 @@ class AssembleGroup < ApplicationJob
     response_ts = resp.message.ts
     nums.each do |num|
         client.reactions_add(name: num, channel: group_chat, timestamp: response_ts)
-        sleep(1.0)
-    end
-  end
-
-  def get_reactions(channel_id, response_ts)
-    reactions_response = client.reactions_get(channel: channel_id, timestamp: response_ts)
-    if reactions_response.ok
-      reactions_response.message.reactions.map{|r| r.name}
-    else
-      []
+        sleep(1.0) # DO NOT DECREASE IN ORDER TO KEEP THINGS IN ORDER - SK
     end
   end
 end
