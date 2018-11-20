@@ -56,7 +56,7 @@ class AssembleGroup < ApplicationJob
   end
 
   def create_poll(group_chat)
-    nums = ["one","two","three","four","five","six","seven","eight","nine","ten"]
+    nums = ["one","two","three","four","five","six","seven","eight","nine","keycap_ten"]
     places_rand = Place.order("RANDOM()").limit(10).map(&:name)
     text = "Where do you want to go?\n"
     nums.zip(places_rand).each do |num, place|
