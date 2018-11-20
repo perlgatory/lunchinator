@@ -68,7 +68,7 @@ class AssembleGroup < ApplicationJob
     response_ts = resp.message.ts
     nums.each do |num|
         client.reactions_add(name: num, channel: group_chat, timestamp: response_ts)
-        sleep(0.5)
+        sleep(1.0)
     end
   end
 
