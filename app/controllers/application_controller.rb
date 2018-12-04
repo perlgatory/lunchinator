@@ -6,8 +6,8 @@ class ApplicationController < ActionController::Base
   def lunch
     client = Slack::Web::Client.new
     channel_id = params[:channel_id]
-    initiating_user_id = params[:user_id]
-    user_time_zone = get_user_timezone(initiating_user_id, client)
+    initiating_user = SlackUser.new(params[:user_id])
+    user_time_zone = get_user_timezone(initiating_user.id, client)
 
     (user_time, user_place) = parse_lunch_command_payload(params[:text])
 
@@ -28,7 +28,7 @@ class ApplicationController < ActionController::Base
             members_response = client.conversations_members(channel: item.channel_id, limit: 999, cursor: next_cursor)
             members.concat members_response.members
         end
-        members.include? initiating_user_id
+        members.include? initiating_user.id
     end
     if results.any?
       links = results.map do |item|
@@ -36,7 +36,7 @@ class ApplicationController < ActionController::Base
       end
       # notify user of other valid group(s)
       client.chat_postEphemeral(channel: channel_id,
-                                user: initiating_user_id,
+                                user: initiating_user.id,
                                 text: "You're not the first to plan lunch today!  Consider:\n" + links.join("\n"),
                                 as_user: true,
                                 attachments: [
@@ -64,7 +64,7 @@ class ApplicationController < ActionController::Base
                                 ])
       return
     end
-    make_lunch(client, channel_id, initiating_user_id, user_time, lunch_time, user_place)
+    make_lunch(client, channel_id, initiating_user, user_time, lunch_time, user_place)
   end
 
   def parse_lunch_command_payload(payload)
@@ -77,11 +77,10 @@ class ApplicationController < ActionController::Base
     return user_time, user_place
   end
 
-  def make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time, lunch_place)
+  def make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, lunch_place)
     channel = Channel.new(channel_id)
     status = channel.client_status(client)
-    username = get_username(initiating_user_id)
-    user_time_zone = get_user_timezone(initiating_user_id, client)
+    user_time_zone = get_user_timezone(initiating_user.id, client)
     now = Time.now.in_time_zone(user_time_zone)
     assemble_time = get_assemble_time(lunch_time, now)
     if assemble_time.nil?
@@ -90,14 +89,21 @@ class ApplicationController < ActionController::Base
     if status == :already_joined
       destination = lunch_place || "to go to lunch"
       resp = client.chat_postMessage(channel: channel_id,
-                                     text: "#{username} wants #{destination} at #{user_lunch_time}  (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
+                                     text: "#{initiating_user.username} wants #{destination} at #{user_lunch_time}  (#{lunch_time.strftime('%H:%M %Z')}). Are you interested?\nReact with :+1: by #{assemble_time.strftime('%H:%M %Z')}",
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
-      LunchGroup.create(channel_id: channel_id, message_id: response_ts, departure_time: lunch_time, destination: lunch_place, status: 'open')
+      LunchGroup.create(
+        channel_id: channel_id,
+        message_id: response_ts,
+        departure_time: lunch_time,
+        destination: lunch_place,
+        status: 'open',
+        initiating_user_id: initiating_user.id
+      )
       AssembleGroup
           .set(wait_until: assemble_time)
-          .perform_later(channel_id, initiating_user_id, response_ts)
+          .perform_later(channel_id, response_ts)
     elsif status == :not_joined
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else
@@ -157,9 +163,5 @@ class ApplicationController < ActionController::Base
       return :not_ok # TODO: Handle this
     end
     user_response.user.tz
-  end
-
-  def get_username(user_id)
-    "<@#{user_id}>"
   end
 end
