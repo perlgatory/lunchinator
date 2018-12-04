@@ -4,4 +4,8 @@ class LunchGroup < ApplicationRecord
       assembled: 'assembled',
       departed: 'departed'
   }
+
+  def destination_string
+    self.destination || 'lunch'
+  end
 end

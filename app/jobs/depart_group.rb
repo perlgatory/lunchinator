@@ -2,7 +2,9 @@ class DepartGroup < ApplicationJob
   def perform(group_id)
     group = LunchGroup.find(group_id)
     group.update(status: 'departed')
-    # client.chat_delete(channel: group.channel_id, ts: group.message_id)
-    # TODO: Change message to indicate group departure
+    client.chat_update(
+      channel: group.channel_id, ts: group.message_id,
+      text: "A group has departed for #{group.destination_string} at #{group.departure_time}. Contact #{group.initiating_user_id} to join."
+    )
   end
 end

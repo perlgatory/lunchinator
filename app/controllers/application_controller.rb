@@ -94,10 +94,17 @@ class ApplicationController < ActionController::Base
                                      as_user: true)
       response_ts = resp.message.ts
       client.reactions_add(name: '+1', channel: channel_id, timestamp: response_ts)
-      LunchGroup.create(channel_id: channel_id, message_id: response_ts, departure_time: lunch_time, destination: lunch_place, status: 'open')
+      LunchGroup.create(
+        channel_id: channel_id,
+        message_id: response_ts,
+        departure_time: lunch_time,
+        destination: lunch_place,
+        status: 'open',
+        initiating_user_id: initiating_user_id
+      )
       AssembleGroup
           .set(wait_until: assemble_time)
-          .perform_later(channel_id, initiating_user_id, response_ts)
+          .perform_later(channel_id, response_ts)
     elsif status == :not_joined
       render plain: "Looks like I'm not invited :cry:. Please invite me to the channel!"
     else

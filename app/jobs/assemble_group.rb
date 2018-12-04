@@ -1,17 +1,17 @@
 class AssembleGroup < ApplicationJob
-  def perform(channel_id, initiating_user_id, message_id)
+  def perform(channel_id, message_id)
+    group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
+    initiating_user_id = group.initiating_user_id
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_chat = create_group_chat(initiating_user_id, users_to_notify)
-    group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
     if group_chat
       destination = group.destination
-      notify_users(group_chat, destination)
+      notify_users(group_chat, group.destination_string)
       create_poll(group_chat) if destination.nil?
       group.update(status: 'assembled')
-      to_string = destination || 'lunch'
       client.chat_update(
           channel: channel_id, ts: message_id,
-          text: "A group is assembling for #{to_string} at #{group.departure_time}. Contact #{initiating_user_id} to join."
+          text: "A group is assembling for #{group.destination_string} at #{group.departure_time}. Contact #{initiating_user_id} to join."
       )
       DepartGroup.set(wait_until: group.departure_time).perform_later(group.id)
     else
@@ -54,7 +54,6 @@ class AssembleGroup < ApplicationJob
   end
 
   def notify_users(group_chat, destination)
-    destination ||= "lunch"
     client.chat_postMessage(channel: group_chat,
                             text: "Hey, you're stuck having #{destination} together",
                             as_user: true)
