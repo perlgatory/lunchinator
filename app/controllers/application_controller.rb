@@ -7,7 +7,7 @@ class ApplicationController < ActionController::Base
     client = Slack::Web::Client.new
     channel_id = params[:channel_id]
     initiating_user = SlackUser.new(params[:user_id])
-    user_time_zone = get_user_timezone(initiating_user_id, client)
+    user_time_zone = get_user_timezone(initiating_user.id, client)
 
     (user_time, user_place) = parse_lunch_command_payload(params[:text])
 
