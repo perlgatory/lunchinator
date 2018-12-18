@@ -129,12 +129,13 @@ class ApplicationController < ActionController::Base
       client = Slack::Web::Client.new
       channel_id = payload['channel']['id']
       initiating_user_id = payload['user']['id']
+      initiating_user = SlackUser.new(initiating_user_id)
       app_text = payload['actions'][0]['value']
       (user_lunch_time, user_place) = parse_lunch_command_payload(app_text)
-      user_time_zone = get_user_timezone(initiating_user_id, client)
+      user_time_zone = get_user_timezone(initiating_user.id, client)
       parsed_time = Chronic.parse(user_lunch_time)
       lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
-      make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time, user_place)
+      make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, user_place)
       render plain: "Lunch group created.  May the odds be ever in your favour!"
     else
       render plain: "How did you get here?"
