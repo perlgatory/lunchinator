@@ -7,7 +7,7 @@ class ApplicationController < ActionController::Base
     client = Slack::Web::Client.new
     channel_id = params[:channel_id]
     initiating_user = SlackUser.new(params[:user_id])
-    user_time_zone = get_user_timezone(initiating_user.id, client)
+    user_time_zone = initiating_user.timezone(client)
 
     (user_time, user_place) = parse_lunch_command_payload(params[:text])
 
@@ -80,7 +80,7 @@ class ApplicationController < ActionController::Base
   def make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, lunch_place)
     channel = Channel.new(channel_id)
     status = channel.client_status(client)
-    user_time_zone = get_user_timezone(initiating_user.id, client)
+    user_time_zone = initiating_user.timezone(client)
     now = Time.now.in_time_zone(user_time_zone)
     assemble_time = get_assemble_time(lunch_time, now)
     if assemble_time.nil?
@@ -129,12 +129,13 @@ class ApplicationController < ActionController::Base
       client = Slack::Web::Client.new
       channel_id = payload['channel']['id']
       initiating_user_id = payload['user']['id']
+      initiating_user = SlackUser.new(initiating_user_id)
       app_text = payload['actions'][0]['value']
       (user_lunch_time, user_place) = parse_lunch_command_payload(app_text)
-      user_time_zone = get_user_timezone(initiating_user_id, client)
+      user_time_zone = initiating_user.timezone(client)
       parsed_time = Chronic.parse(user_lunch_time)
       lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
-      make_lunch(client, channel_id, initiating_user_id, user_lunch_time, lunch_time, user_place)
+      make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, user_place)
       render plain: "Lunch group created.  May the odds be ever in your favour!"
     else
       render plain: "How did you get here?"
@@ -152,16 +153,5 @@ class ApplicationController < ActionController::Base
     else
       lunch_time - 10.minutes
     end
-  end
-
-  def get_user_timezone(user_id, client)
-    # https://api.slack.com/methods/users.info <- get user timezone from here
-    user_response = client.users_info(user: user_id)
-    # check that response is good
-    status_ok = user_response.ok
-    unless status_ok
-      return :not_ok # TODO: Handle this
-    end
-    user_response.user.tz
   end
 end
