@@ -16,6 +16,10 @@ class AssembleGroup < ApplicationJob
       DepartGroup.set(wait_until: group.departure_time).perform_later(group.id)
     else
       group.destroy
+      client.chat_update(
+          channel: channel_id, ts: message_id,
+          text: "#{initiating_user.username} wanted #{group.destination_string} at #{group.departure_time} but was eaten by a :kraken:."
+      )
     end
   end
 
