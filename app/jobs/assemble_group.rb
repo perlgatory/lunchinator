@@ -9,16 +9,18 @@ class AssembleGroup < ApplicationJob
       notify_users(group_chat, group.destination_string)
       create_poll(group_chat) if destination.nil?
       group.update(status: 'assembled')
+      user_time_zone = group.initiating_user.timezone(client)
       client.chat_update(
           channel: channel_id, ts: message_id,
-          text: "A group is assembling for #{group.destination_string} at #{group.departure_time}. Contact #{initiating_user.username} to join."
+          text: "A group is assembling for #{group.destination_string} at #{group.departure_time.in_time_zone(user_time_zone)}. Contact #{initiating_user.username} to join."
       )
       DepartGroup.set(wait_until: group.departure_time).perform_later(group.id)
     else
+      user_time_zone = group.initiating_user.timezone(client)
       group.destroy
       client.chat_update(
           channel: channel_id, ts: message_id,
-          text: "#{initiating_user.username} wanted #{group.destination_string} at #{group.departure_time} but was eaten by a :kraken:."
+          text: "#{initiating_user.username} wanted #{group.destination_string} at #{group.departure_time.in_time_zone(user_time_zone)} but was eaten by a :kraken:."
       )
     end
   end
