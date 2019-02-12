@@ -1,10 +1,12 @@
 class AssembleGroup < ApplicationJob
-  include ApplicationHelper
 
   def perform(channel_id, message_id)
     group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
     initiating_user = group.initiating_user
-    lunch_time = format_time_for_user(group.departure_time, initiating_user, client)
+    lunch_time = DateFormat.for_timezone(
+      group.departure_time,
+      initiating_user.timezone(client)
+    )
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_chat = create_group_chat(initiating_user.id, users_to_notify)
     if group_chat
