@@ -6,7 +6,7 @@ class DepartGroup < ApplicationJob
 
     lunch_time = DateFormat.for_timezone(
       group.departure_time,
-      user.timezone(client)
+      group.initiating_user.timezone(client)
     )
 
     client.chat_update(
