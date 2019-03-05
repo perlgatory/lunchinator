@@ -1,7 +1,12 @@
 class AssembleGroup < ApplicationJob
+
   def perform(channel_id, message_id)
     group = LunchGroup.where(channel_id: channel_id, message_id: message_id).first
     initiating_user = group.initiating_user
+    lunch_time = DateFormat.for_timezone(
+      group.departure_time,
+      initiating_user.timezone(client)
+    )
     users_to_notify = get_users_who_reacted(channel_id, message_id)
     group_chat = create_group_chat(initiating_user.id, users_to_notify)
     if group_chat
@@ -11,14 +16,14 @@ class AssembleGroup < ApplicationJob
       group.update(status: 'assembled')
       client.chat_update(
           channel: channel_id, ts: message_id,
-          text: "A group is assembling for #{group.destination_string} at #{group.departure_time}. Contact #{initiating_user.username} to join."
+          text: "A group is assembling for #{group.destination_string} at #{lunch_time}. Contact #{initiating_user.username} to join."
       )
       DepartGroup.set(wait_until: group.departure_time).perform_later(group.id)
     else
       group.destroy
       client.chat_update(
           channel: channel_id, ts: message_id,
-          text: "#{initiating_user.username} wanted #{group.destination_string} at #{group.departure_time} but was eaten by a :kraken:."
+          text: "#{initiating_user.username} wanted #{group.destination_string} at #{lunch_time} but was eaten by a :kraken:."
       )
     end
   end
