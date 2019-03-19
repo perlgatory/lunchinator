@@ -138,8 +138,6 @@ class ApplicationController < ActionController::Base
       ok = make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, user_place)
       if ok
         render plain: "Lunch group created.  May the odds be ever in your favour!"
-      else
-        render plain: "This is not the lunchtime you're looking for. Move along."
       end
     else
       render plain: "How did you get here?"
