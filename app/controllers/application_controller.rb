@@ -135,8 +135,10 @@ class ApplicationController < ActionController::Base
       user_time_zone = initiating_user.timezone(client)
       parsed_time = Chronic.parse(user_lunch_time)
       lunch_time = ActiveSupport::TimeZone.new(user_time_zone).local_to_utc(parsed_time).in_time_zone(user_time_zone)
-      make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, user_place)
-      render plain: "Lunch group created.  May the odds be ever in your favour!"
+      ok = make_lunch(client, channel_id, initiating_user, user_lunch_time, lunch_time, user_place)
+      if ok
+        render plain: "Lunch group created.  May the odds be ever in your favour!"
+      end
     else
       render plain: "How did you get here?"
     end
