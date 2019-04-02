@@ -3,6 +3,17 @@ class ApplicationController < ActionController::Base
     render plain: "How'd you get here? Shoo!"
   end
 
+  def delete_lunch
+    cmd = DeleteLunch.new(
+      params[:channel_id],
+      params[:user_id],
+      params[:text]
+    )
+
+    res = cmd.perform
+    render plain: "blah"
+  end
+
   def lunch
     client = Slack::Web::Client.new
     channel_id = params[:channel_id]
@@ -119,6 +130,7 @@ class ApplicationController < ActionController::Base
       test
     end
   end
+
 
   private
   def lunch_anyway(payload)
