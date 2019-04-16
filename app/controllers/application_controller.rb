@@ -11,7 +11,7 @@ class ApplicationController < ActionController::Base
     )
 
     res = cmd.perform
-    render plain: "blah"
+    render plain: res.message
   end
 
   def lunch

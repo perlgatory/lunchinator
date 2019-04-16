@@ -8,19 +8,22 @@ class DeleteLunch
   end
 
   #we still need to handle the case where they supply a time stamp/
-  #do we make it interactive (list the lunches in the reply and let them pick?
+  #do we make it interactive (list the lunches in the reply and let them pick)?
   #or do we make them specify a timestamp
   def perform
     groups = base_query
+
     if groups.size > 1
+      lunchtimes = groups.map(&:departure_time)
+      prompt_for_lunchtime(lunchtimes)
       CommandResult.new(
-        "You have more than one open group that hasn't departed yet, please provide a timestamp",
+        "If you'd like to make a call, please hang up and try again.",
         false
       )
     elsif groups.size = 1
       group.first.destroy
       CommandResult.new(
-        "Lame...",
+        "The world is a little bit darker place this day.",
         true
       )
     else
@@ -29,6 +32,18 @@ class DeleteLunch
         false
       )
     end
+  end
+
+  def prompt_for_lunchtime(lunchtimes)
+    timezone = SlackUser.new(user_id).timezone(client)
+    picker = LunchtimePicker.generate(lunchtimes, timezone)
+    client.chat_postEphemeral(channel: channel_id,
+                              user: user_id,
+                              text: "You have more than one open lunch request.  Which one would you like to mercilessly destroy?",
+                              as_user: true,
+                              blocks: picker
+                             )
+
   end
 
   private
