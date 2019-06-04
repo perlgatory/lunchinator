@@ -20,8 +20,8 @@ class DeleteLunch
         "If you'd like to make a call, please hang up and try again.",
         false
       )
-    elsif groups.size = 1
-      group.first.destroy
+    elsif groups.size == 1
+      groups.first.destroy
       CommandResult.new(
         "The world is a little bit darker place this day.",
         true
