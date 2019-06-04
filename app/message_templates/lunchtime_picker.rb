@@ -1,6 +1,6 @@
 class LunchtimePicker
   #for now this is specific to destruction--be sure to change the message if we find another use for it!
-  def self.generate(lunchtimes, timezone)
+  def self.generate(lunchtimes, timezone, purpose)
     options = lunchtimes.map { |x| generate_option(x, timezone) }
     <<~SELECTOR.squish
 [
@@ -11,7 +11,7 @@ class LunchtimePicker
             "text": "Select a victim:"
         },
         "accessory": {
-            "action_id": "lunchtime",
+            "action_id": "#{purpose}",
             "type": "static_select",
             "placeholder": {
                 "type": "plain_text",

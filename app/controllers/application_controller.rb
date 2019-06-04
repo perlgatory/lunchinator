@@ -126,6 +126,8 @@ class ApplicationController < ActionController::Base
     payload = JSON.parse params['payload']
     if payload['callback_id'] == 'lunch_anyway'
       lunch_anyway(payload)
+    elsif payload['actions'][0]['action_id'] == 'delete-picked-lunch'
+      delete_picked_time(payload)
     else
       test
     end
@@ -154,6 +156,19 @@ class ApplicationController < ActionController::Base
     else
       render plain: "How did you get here?"
     end
+  end
+
+  def delete_picked_time(payload)
+    channel_id = payload['channel']['id']
+    user_id = payload['user']['id']
+    picked_time = payload['actions'][0]['selected_option']['text']['value']
+    cmd = DeleteLunch.new(
+      channel_id,
+      user_id,
+      picked_time
+    )
+    res = cmd.perform
+    render plain: res.message
   end
 
   def get_assemble_time(lunch_time, now)
